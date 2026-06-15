@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raven: Sing me a Happy Song</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=IM+Fell+English&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#c9b99a;font-family:'IM Fell English',serif;min-height:100vh;overflow-x:hidden;}
+  .screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;}
+  .screen.active{display:flex;}
+  #screen-title{position:relative;}
+  .title-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,#1a0a2a 0%,#0a0a0f 70%);pointer-events:none;}
+  .title-content{position:relative;text-align:center;max-width:600px;}
+  .title-logo{font-family:'Cinzel',serif;font-size:clamp(2.2rem,6vw,3.5rem);font-weight:600;color:#e8d5a3;letter-spacing:.15em;text-shadow:0 0 40px rgba(180,140,60,.3);margin-bottom:.3rem;}
+  .title-subtitle{font-size:1rem;color:#7a6a50;letter-spacing:.2em;font-style:italic;margin-bottom:3rem;}
+  .title-quote{font-size:1.05rem;color:#9a8870;font-style:italic;line-height:1.8;margin-bottom:3rem;border-left:2px solid #3a2a1a;padding-left:1.2rem;text-align:left;}
+  .btn-primary{background:transparent;border:1px solid #6a5030;color:#e8d5a3;font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.2em;padding:.8rem 2.5rem;cursor:pointer;transition:all .3s;text-transform:uppercase;}
+  .btn-primary:hover{border-color:#c9a060;color:#f0e0b0;background:rgba(100,70,30,.15);}
+  .btn-secondary{background:transparent;border:1px solid #2a1f14;color:#5a4a30;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:.15em;padding:.7rem 1.8rem;cursor:pointer;transition:all .3s;text-transform:uppercase;}
+  .btn-secondary:hover{border-color:#4a3a20;color:#9a8870;}
+  .step-wrapper{width:100%;max-width:720px;}
+  .step-header{text-align:center;margin-bottom:2rem;}
+  .step-num{font-size:.75rem;letter-spacing:.3em;color:#5a4a30;text-transform:uppercase;margin-bottom:.5rem;}
+  .step-title{font-family:'Cinzel',serif;font-size:1.6rem;color:#e8d5a3;letter-spacing:.08em;}
+  .step-divider{width:60px;height:1px;background:#3a2a1a;margin:1rem auto 0;}
+  .progress-bar{display:flex;gap:6px;justify-content:center;margin-bottom:2.5rem;}
+  .progress-dot{width:6px;height:6px;border-radius:50%;background:#2a1f14;transition:background .3s;}
+  .progress-dot.active{background:#c9a060;}
+  .progress-dot.done{background:#4a3a20;}
+
+  /* GENDER */
+  .gender-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+  .gender-card{border:1px solid #2a1f14;padding:1.2rem 1rem 1rem;text-align:center;cursor:pointer;transition:all .3s;background:#0f0c09;position:relative;overflow:hidden;}
+  .gender-card:hover{border-color:#6a5030;}
+  .gender-card.selected{border-color:#c9a060;background:#120f0a;}
+  .gender-card.selected::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(180,140,60,.06) 0%,transparent 70%);pointer-events:none;}
+
+  /* Sprite sheet crop — mostra só a primeira das 5 poses */
+  .sprite-wrap{width:160px;height:210px;overflow:hidden;position:relative;margin:0 auto;}
+  .sprite-sheet{width:500%;height:auto;display:block;image-rendering:pixelated;opacity:.75;transition:opacity .3s;}
+  .gender-card.selected .sprite-sheet{opacity:1;}
+  .gender-card:hover .sprite-sheet{opacity:.9;}
+  .gender-label{font-family:'Cinzel',serif;font-size:.9rem;color:#9a8870;letter-spacing:.15em;margin-top:.8rem;}
+  .gender-card.selected .gender-label{color:#e8d5a3;}
+  .nav-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+
+  /* CUSTOMIZE */
+  .preview-panel{display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;}
+  .preview-sprite-area{flex:0 0 auto;text-align:center;}
+  .preview-canvas-wrap{background:#080608;border:1px solid #2a1f14;padding:1rem;display:inline-block;margin-bottom:.5rem;}
+  .preview-wrap{width:120px;height:158px;overflow:hidden;position:relative;}
+  .preview-sheet{width:500%;height:auto;display:block;image-rendering:pixelated;}
+  .preview-name-label{font-size:.75rem;color:#5a4a30;letter-spacing:.2em;text-transform:uppercase;margin-top:.5rem;}
+  .preview-options{flex:1;min-width:200px;}
+  .name-input{background:#080608;border:1px solid #2a1f14;color:#e8d5a3;font-family:'IM Fell English',serif;font-size:1rem;padding:.7rem 1rem;width:100%;outline:none;transition:border-color .3s;margin-bottom:1.5rem;}
+  .name-input:focus{border-color:#6a5030;}
+  .name-input::placeholder{color:#3a2a1a;}
+  .custom-section{margin-bottom:1.2rem;}
+  .custom-label{font-size:.8rem;letter-spacing:.2em;color:#5a4a30;text-transform:uppercase;margin-bottom:.6rem;}
+  .color-grid{display:flex;gap:8px;flex-wrap:wrap;}
+  .color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;}
+  .color-swatch.selected{border-color:#e8d5a3;transform:scale(1.15);}
+  .color-swatch:hover{transform:scale(1.1);}
+
+  /* ARCHETYPE */
+  #screen-archetype{background:#080608;}
+  .arch-grid{display:grid;gap:1rem;margin-bottom:2rem;}
+  .arch-card{border:1px solid #1a1410;padding:1.2rem 1.5rem;cursor:pointer;transition:all .3s;background:#0a0808;position:relative;}
+  .arch-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .3s;}
+  .arch-card:hover{border-color:#3a2a1a;}
+  .arch-card.selected{border-color:#4a3a20;background:#0d0a07;}
+  .arch-card[data-arch="wolf"].selected::before{background:#8B2020;}
+  .arch-card[data-arch="flutist"].selected::before{background:#2a5a8a;}
+  .arch-card[data-arch="lamp"].selected::before{background:#a07020;}
+  .arch-name{font-family:'Cinzel',serif;font-size:.95rem;color:#c9b99a;margin-bottom:.2rem;letter-spacing:.08em;}
+  .arch-card.selected .arch-name{color:#e8d5a3;}
+  .arch-subtitle{font-size:.8rem;color:#5a4a30;font-style:italic;margin-bottom:.6rem;}
+  .arch-desc{font-size:.85rem;color:#7a6a50;line-height:1.6;}
+  .arch-card.selected .arch-desc{color:#9a8870;}
+  .arch-tag{display:inline-block;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;padding:2px 8px;border:1px solid;margin-top:.6rem;}
+  .arch-tag.wolf{color:#8B2020;border-color:#4a1010;}
+  .arch-tag.flutist{color:#2a5a8a;border-color:#1a3a5a;}
+  .arch-tag.lamp{color:#a07020;border-color:#6a4a10;}
+
+  /* SUMMARY */
+  #screen-summary{background:#0a0a0f;}
+  .summary-card{border:1px solid #2a1f14;background:#0d0a08;padding:2rem;max-width:500px;width:100%;text-align:center;margin-bottom:2rem;}
+  .summary-name{font-family:'Cinzel',serif;font-size:1.4rem;color:#e8d5a3;margin-bottom:.3rem;}
+  .summary-arch{font-size:.85rem;color:#7a6a50;font-style:italic;margin-bottom:1.5rem;}
+  .summary-wrap{width:100px;height:132px;overflow:hidden;position:relative;margin:0 auto;}
+  .summary-sheet{width:500%;height:auto;display:block;image-rendering:pixelated;}
+  .summary-stats{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+  .stat-box{background:#0a0808;border:1px solid #1a1410;padding:.8rem;}
+  .stat-label{font-size:.7rem;letter-spacing:.2em;color:#4a3a20;text-transform:uppercase;margin-bottom:.3rem;}
+  .stat-val{font-family:'Cinzel',serif;font-size:.9rem;color:#c9b99a;}
+  .warning-text{font-size:.8rem;color:#5a3a3a;font-style:italic;border-top:1px solid #1a1010;padding-top:1rem;line-height:1.7;}
+
+  #particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .screen>*{position:relative;z-index:1;}
+  .fade-in{animation:fadeIn .6s ease forwards;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+
+<!-- TITLE -->
+<div id="screen-title" class="screen active">
+  <div class="title-bg"></div>
+  <div class="title-content fade-in">
+    <div class="title-logo">RAVEN</div>
+    <div class="title-subtitle">Sing me a Happy Song</div>
+    <div class="title-quote">
+      O maior perigo não é descobrir que os contos são reais.<br>
+      O maior perigo é perceber que eles sempre foram.<br>
+      E que, agora, eles começaram a escrever novos finais.
+    </div>
+    <button class="btn-primary" onclick="goTo('screen-gender')">Iniciar jornada</button>
+  </div>
+</div>
+
+<!-- GENDER -->
+<div id="screen-gender" class="screen">
+  <div class="step-wrapper fade-in">
+    <div class="progress-bar">
+      <div class="progress-dot active"></div>
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="step-header">
+      <div class="step-num">Passo 1 de 3</div>
+      <div class="step-title">Quem é você?</div>
+      <div class="step-divider"></div>
+    </div>
+    <div class="gender-grid">
+      <div class="gender-card" id="card-m" onclick="selectGender('m')">
+        <div class="sprite-wrap">
+          <!-- Coloque Male.png na mesma pasta que este arquivo -->
+          <img class="sprite-sheet" src="Male.png" alt="Masculino">
+        </div>
+        <div class="gender-label">Homem</div>
+      </div>
+      <div class="gender-card" id="card-f" onclick="selectGender('f')">
+        <div class="sprite-wrap">
+          <!-- Coloque Female.png na mesma pasta que este arquivo -->
+          <img class="sprite-sheet" src="Female.png" alt="Feminino">
+        </div>
+        <div class="gender-label">Mulher</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goTo('screen-title')">Voltar</button>
+      <button class="btn-primary" id="btn-gender-next" onclick="goTo('screen-customize')" style="opacity:.3;pointer-events:none">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMIZE -->
+<div id="screen-customize" class="screen">
+  <div class="step-wrapper fade-in">
+    <div class="progress-bar">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot active"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="step-header">
+      <div class="step-num">Passo 2 de 3</div>
+      <div class="step-title">Personalize seu aspecto</div>
+      <div class="step-divider"></div>
+    </div>
+    <div class="preview-panel">
+      <div class="preview-sprite-area">
+        <div class="preview-canvas-wrap">
+          <div class="preview-wrap">
+            <img class="preview-sheet" id="preview-sheet" src="" alt="Preview">
+          </div>
+        </div>
+        <div class="preview-name-label" id="preview-name-label">Seu personagem</div>
+      </div>
+      <div class="preview-options">
+        <input class="name-input" type="text" id="char-name" placeholder="Nome do personagem..." maxlength="24" oninput="updateName(this.value)">
+        <div class="custom-section">
+          <div class="custom-label">Tom de pele</div>
+          <div class="color-grid" id="skin-colors"></div>
+        </div>
+        <div class="custom-section">
+          <div class="custom-label">Cor dos olhos</div>
+          <div class="color-grid" id="eye-colors"></div>
+        </div>
+        <div class="custom-section">
+          <div class="custom-label">Cor do manto</div>
+          <div class="color-grid" id="cloth-colors"></div>
+        </div>
+        <p style="font-size:.75rem;color:#3a2a1a;font-style:italic;margin-top:1rem;line-height:1.6;">
+          Personalização por camada disponível na versão completa.
+        </p>
+      </div>
+    </div>
+    <div class="nav-row" style="margin-top:1.5rem">
+      <button class="btn-secondary" onclick="goTo('screen-gender')">Voltar</button>
+      <button class="btn-primary" onclick="goTo('screen-archetype')">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHETYPE -->
+<div id="screen-archetype" class="screen">
+  <div class="step-wrapper fade-in">
+    <div class="progress-bar">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot active"></div>
+    </div>
+    <div class="step-header">
+      <div class="step-num">Passo 3 de 3</div>
+      <div class="step-title">Escolha seu Arquétipo</div>
+      <div class="step-divider"></div>
+    </div>
+    <p style="text-align:center;font-size:.85rem;color:#5a4a30;font-style:italic;margin-bottom:1.5rem;line-height:1.7;">
+      Você não sabe ainda o que isso significa.<br>Mas algo dentro de você já reconhece.
+    </p>
+    <div class="arch-grid">
+      <div class="arch-card" data-arch="wolf" onclick="selectArch(this)">
+        <div class="arch-name">A Pele do Lobo</div>
+        <div class="arch-subtitle">Chapeuzinho Vermelho</div>
+        <div class="arch-desc">Para aqueles que, em algum momento, foram caçados. Que sentiram a floresta fechar ao redor. Que sobreviveram porque algo dentro deles mordeu de volta.</div>
+        <span class="arch-tag wolf">Força · Instinto · Ruína</span>
+      </div>
+      <div class="arch-card" data-arch="flutist" onclick="selectArch(this)">
+        <div class="arch-name">O Último Cortejo</div>
+        <div class="arch-subtitle">O Flautista de Hamelin</div>
+        <div class="arch-desc">Para aqueles traídos por comunidades inteiras. Que viram crimes encobertos, promessas quebradas, inocentes descartados.</div>
+        <span class="arch-tag flutist">Som · Memória · Cortejo</span>
+      </div>
+      <div class="arch-card" data-arch="lamp" onclick="selectArch(this)">
+        <div class="arch-name">A Lâmpada Quebrada</div>
+        <div class="arch-subtitle">Aladin</div>
+        <div class="arch-desc">Para aqueles que aceitaram ajuda sem entender o preço. Que quiseram mudar de vida a qualquer custo. Que conquistaram tudo e continuavam vazios.</div>
+        <span class="arch-tag lamp">Desejo · Dívida · Distorção</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goTo('screen-customize')">Voltar</button>
+      <button class="btn-primary" id="btn-arch-next" onclick="goTo('screen-summary')" style="opacity:.3;pointer-events:none">Despertar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="screen-summary" class="screen">
+  <div class="fade-in" style="text-align:center;width:100%;max-width:500px;">
+    <div class="step-header">
+      <div class="step-num">Seu personagem</div>
+      <div class="step-title">A história começa</div>
+      <div class="step-divider"></div>
+    </div>
+    <div class="summary-card">
+      <div style="background:#080608;border:1px solid #1a1410;padding:1rem;display:inline-block;margin-bottom:1rem;">
+        <div class="summary-wrap">
+          <img class="summary-sheet" id="summary-sheet" src="" alt="Personagem">
+        </div>
+      </div>
+      <div class="summary-name" id="sum-name">—</div>
+      <div class="summary-arch" id="sum-arch">—</div>
+      <div class="summary-stats">
+        <div class="stat-box"><div class="stat-label">Gênero</div><div class="stat-val" id="sum-gender">—</div></div>
+        <div class="stat-box"><div class="stat-label">Sanidade</div><div class="stat-val">100 / 100</div></div>
+        <div class="stat-box"><div class="stat-label">Vínculo</div><div class="stat-val">Intacto</div></div>
+        <div class="stat-box"><div class="stat-label">Despertar</div><div class="stat-val">Adormecido</div></div>
+      </div>
+      <div class="warning-text">Você ainda não sabe o que carrega.<br>Mas o conto já sabe quem você é.</div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goTo('screen-archetype')">Voltar</button>
+      <button class="btn-primary" onclick="startGame()">Entrar no mundo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const URLS = { m:'Male.png', f:'Female.png' };
+const state = { gender:null, name:'', arch:null };
+const archNames = { wolf:'A Pele do Lobo', flutist:'O Último Cortejo', lamp:'A Lâmpada Quebrada' };
+const genderNames = { m:'Homem', f:'Mulher' };
+
+function selectGender(g) {
+  state.gender = g;
+  document.getElementById('card-m').classList.toggle('selected', g==='m');
+  document.getElementById('card-f').classList.toggle('selected', g==='f');
+  const btn = document.getElementById('btn-gender-next');
+  btn.style.opacity='1'; btn.style.pointerEvents='auto';
+}
+
+function selectArch(card) {
+  document.querySelectorAll('.arch-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.arch = card.dataset.arch;
+  const btn = document.getElementById('btn-arch-next');
+  btn.style.opacity='1'; btn.style.pointerEvents='auto';
+}
+
+function updateName(val) {
+  state.name = val;
+  document.getElementById('preview-name-label').textContent = val || 'Seu personagem';
+}
+
+function buildSwatches(id, palette) {
+  const el = document.getElementById(id);
+  el.innerHTML='';
+  palette.forEach((c,i)=>{
+    const s=document.createElement('div');
+    s.className='color-swatch'+(i===0?' selected':'');
+    s.style.background=c;
+    s.onclick=()=>{el.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('selected'));s.classList.add('selected');};
+    el.appendChild(s);
+  });
+}
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  if(id==='screen-customize') {
+    document.getElementById('preview-sheet').src = URLS[state.gender]||URLS.m;
+    buildSwatches('skin-colors',['#FDDBB4','#F5C89A','#E8A87C','#C8956C','#A0724A','#7A4F2E','#4A2E14','#2C1A0A']);
+    buildSwatches('eye-colors', ['#4a7aaa','#3a8a5a','#8a5a2a','#2a2a6a','#6a2a2a','#5a5a5a','#2a6a6a','#6a4a8a']);
+    buildSwatches('cloth-colors',['#6a1a1a','#1a1a6a','#1a5a3a','#4a3a6a','#2a2a2a','#6a4a1a','#1a4a5a','#5a2a4a']);
+  }
+  if(id==='screen-summary') {
+    document.getElementById('summary-sheet').src = URLS[state.gender]||URLS.m;
+    document.getElementById('sum-name').textContent = state.name||'Sem nome';
+    document.getElementById('sum-arch').textContent = archNames[state.arch]||'—';
+    document.getElementById('sum-gender').textContent = genderNames[state.gender]||'—';
+  }
+}
+
+function startGame() {
+  alert('[ Em breve ]\n\nAto 1 em construção.\n\n'+(state.name||'Sem nome')+' · '+(genderNames[state.gender]||'?')+'\n'+(archNames[state.arch]||'?'));
+}
+
+// Partículas
+const pc=document.getElementById('particles'),pctx=pc.getContext('2d');
+let parts=[];
+function resizeP(){pc.width=innerWidth;pc.height=innerHeight;}
+resizeP();window.addEventListener('resize',resizeP);
+for(let i=0;i<60;i++) parts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.2+.3,s:Math.random()*.3+.05,o:Math.random()*.4+.1,d:Math.random()*Math.PI*2});
+function animP(){
+  pctx.clearRect(0,0,pc.width,pc.height);
+  parts.forEach(p=>{
+    p.y-=p.s;p.x+=Math.sin(p.d+Date.now()*.0005)*.2;
+    if(p.y<-5){p.y=pc.height+5;p.x=Math.random()*pc.width;}
+    pctx.beginPath();pctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    pctx.fillStyle=`rgba(200,160,80,${p.o})`;pctx.fill();
+  });
+  requestAnimationFrame(animP);
+}
+animP();
+</script>
+</body>
+</html>
